@@ -15,3 +15,9 @@
  (modules join_list)
  (inline_tests)
  (preprocess (pps ppx_viewpattern ppx_inline_test)))
+
+(library
+ (name n_plus_k)
+ (modules n_plus_k)
+ (inline_tests)
+ (preprocess (pps ppx_viewpattern ppx_inline_test)))
