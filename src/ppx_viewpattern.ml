@@ -17,7 +17,7 @@ let pat_fold_mapper = object
 end
 
 let impl_mapper = object (self)
-  inherit Ast_traverse.map as _super
+  inherit Ast_traverse.map as super
 
   (* method! case (case: case) = *)
   method do_case case rest =
@@ -43,6 +43,20 @@ let impl_mapper = object (self)
     List.fold_right (fun case rest ->
         self#do_case case rest :: rest
       ) cases []
+
+  method! expression expr =
+    match expr.pexp_desc with
+    | Pexp_fun (label, default, pat, expr) ->
+      let (pat', acc) = pat_fold_mapper#pattern pat [] in
+      let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
+          let loc = inner.ppat_loc in
+          pexp_match ~loc (eapply ~loc view [evar ~loc name]) [
+            {pc_lhs = inner; pc_guard = None; pc_rhs = rhs'}
+          ]
+        ) expr acc
+      in
+      {expr with pexp_desc = Pexp_fun (label, default, pat', rhs')}
+    | _ -> super#expression expr
 end
 
 let impl (str: structure): structure =
