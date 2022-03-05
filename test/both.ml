@@ -15,3 +15,19 @@ let f3 [%view? (xs, h :: t) when both] = h :: xs @ t
 let%test _ = f [1] = [1; 1]
 let%test _ = f [1; 2] = [1; 1; 2; 2]
 let%test _ = f [1; 2; 3] = [1; 1; 2; 3; 2; 3]
+
+let b =
+  let [%view? (xs, h :: t) when both] = [1; 2; 3] in
+  xs = [1; 2; 3] && h = 1 && t = [2; 3]
+let%test _ = b
+
+
+let%test _ =
+  let [%view? (xs, h :: t) when both] = [1; 2; 3] in
+  xs = [1; 2; 3] && h = 1 && t = [2; 3]
+
+
+(* TODO: structure let support *)
+(* let [%view? (xs, h :: t) when both] = [1; 2; 3]
+let%test _ =
+  xs = [1; 2; 3] && h = 1 && t = [2; 3] *)
