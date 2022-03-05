@@ -10,7 +10,7 @@ homepage: "https://github.com/sim642/ppx_viewpattern"
 bug-reports: "https://github.com/sim642/ppx_viewpattern/issues"
 depends: [
   "dune" {>= "2.8"}
-  "ppxlib"
+  "ppxlib" {>= "0.17.0"}
   "ppx_inline_test" {with-test}
   "odoc" {with-doc}
 ]
