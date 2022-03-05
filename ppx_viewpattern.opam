@@ -11,6 +11,7 @@ bug-reports: "https://github.com/sim642/ppx_viewpattern/issues"
 depends: [
   "dune" {>= "2.8"}
   "ppxlib"
+  "ppx_inline_test" {with-test}
   "odoc" {with-doc}
 ]
 build: [

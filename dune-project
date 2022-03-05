@@ -11,4 +11,5 @@
  (synopsis "View patterns in OCaml")
  (description "Transformation for view patterns in OCaml. Attempts to imitate Haskell view patterns.")
  (depends
-  ppxlib))
+  ppxlib
+  (ppx_inline_test :with-test)))
