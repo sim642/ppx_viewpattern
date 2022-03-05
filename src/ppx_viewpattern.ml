@@ -57,10 +57,10 @@ let impl_mapper = object (self)
       in
       {expr with pexp_desc = Pexp_fun (label, default, pat', rhs')}
     | Pexp_let (flag, bindings, expr) ->
-      let (acc, bindings') = List.fold_left_map (fun acc binding ->
+      let (acc, bindings') = List.fold_right (fun binding (acc, bindings') ->
          let (pat', acc) = pat_fold_mapper#pattern binding.pvb_pat acc in
-         (acc, {binding with pvb_pat = pat'; pvb_expr = self#expression binding.pvb_expr})
-        ) [] bindings
+         (acc, {binding with pvb_pat = pat'; pvb_expr = self#expression binding.pvb_expr} :: bindings')
+        ) bindings ([], [])
       in
       let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
           let loc = inner.ppat_loc in
