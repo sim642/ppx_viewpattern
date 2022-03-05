@@ -1,4 +1,11 @@
 (library
  (name test)
+ (modules test)
+ (inline_tests)
+ (preprocess (pps ppx_viewpattern ppx_inline_test)))
+
+(library
+ (name iterator_style)
+ (modules iterator_style)
  (inline_tests)
  (preprocess (pps ppx_viewpattern ppx_inline_test)))
