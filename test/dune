@@ -27,3 +27,9 @@
  (modules both)
  (inline_tests)
  (preprocess (pps ppx_viewpattern ppx_inline_test)))
+
+(library
+ (name test2)
+ (modules test2)
+ (inline_tests)
+ (preprocess (pps ppx_viewpattern ppx_inline_test)))
