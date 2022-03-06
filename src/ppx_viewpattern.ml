@@ -40,7 +40,7 @@ let impl_mapper: Ast_traverse.map = object (self)
           {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
           fallback_case ~loc
         ])
-      ) (case.pc_guard, self#expression case.pc_rhs) acc
+      ) (Option.map self#expression case.pc_guard, self#expression case.pc_rhs) acc
     in
     {pc_lhs = pat'; pc_guard = guard'; pc_rhs = rhs'}
 
