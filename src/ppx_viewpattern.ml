@@ -17,11 +17,10 @@ let pat_fold_mapper = object (self)
     | _ -> super#pattern pat acc
 end
 
-let impl_mapper = object (self)
+let impl_mapper: Ast_traverse.map = object (self)
   inherit Ast_traverse.map as super
 
-  (* method! case (case: case) = *)
-  method do_case case rest =
+  method private do_case case rest =
     let (pat', acc) = pat_fold_mapper#pattern case.pc_lhs [] in
     if acc = [] then
       case
