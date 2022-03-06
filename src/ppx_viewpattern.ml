@@ -4,7 +4,7 @@ open Ast_builder.Default
 let cnt = ref 0
 
 let pat_fold_mapper = object (self)
-  inherit [(string * expression * pattern) list] Ast_traverse.fold_map as super
+  inherit [(expression * expression * pattern) list] Ast_traverse.fold_map as super
 
   method! pattern pat acc =
     let loc = pat.ppat_loc in
@@ -13,7 +13,7 @@ let pat_fold_mapper = object (self)
       let viewpattern_label = "__view_" ^ string_of_int !cnt in
       incr cnt;
       let (inner', accinner) = self#pattern inner [] in
-      (pvar ~loc viewpattern_label, accinner @ (viewpattern_label, view, inner') :: acc)
+      (pvar ~loc viewpattern_label, accinner @ (evar ~loc viewpattern_label, view, inner') :: acc)
     | _ -> super#pattern pat acc
 end
 
@@ -32,7 +32,7 @@ let impl_mapper: Ast_traverse.map = object (self)
       in
       let (_, rhs') = List.fold_left (fun (guard, rhs') (name, view, inner) ->
           let loc = inner.ppat_loc in
-          (None, pexp_match ~loc (eapply ~loc view [evar ~loc name]) [
+          (None, pexp_match ~loc (eapply ~loc view [name]) [
             {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
             {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) rest}
           ])
@@ -52,7 +52,7 @@ let impl_mapper: Ast_traverse.map = object (self)
       let (pat', acc) = pat_fold_mapper#pattern pat [] in
       let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
           let loc = inner.ppat_loc in
-          pexp_match ~loc (eapply ~loc view [evar ~loc name]) [
+          pexp_match ~loc (eapply ~loc view [name]) [
             {pc_lhs = inner; pc_guard = None; pc_rhs = rhs'}
           ]
         ) (self#expression expr) acc
@@ -66,7 +66,7 @@ let impl_mapper: Ast_traverse.map = object (self)
       in
       let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
           let loc = inner.ppat_loc in
-          pexp_match ~loc (eapply ~loc view [evar ~loc name]) [
+          pexp_match ~loc (eapply ~loc view [name]) [
             {pc_lhs = inner; pc_guard = None; pc_rhs = rhs'}
           ]
         ) (self#expression expr) acc
