@@ -22,27 +22,27 @@ let impl_mapper: Ast_traverse.map = object (self)
 
   method private case_with_fallback case fallback_cases =
     let (pat', acc) = pat_fold_mapper#pattern case.pc_lhs [] in
-    if acc = [] then
-      case
-    else (
-      let fallback_label = "__view_fallback" in
-      let pat' =
+    let fallback_label = "__view_fallback" in
+    let pat' =
+      if acc = [] then
+        pat' (* avoid unused alias *)
+      else (
         let loc = pat'.ppat_loc in
         ppat_alias ~loc pat' (Located.mk ~loc fallback_label)
-      in
-      let fallback_case ~loc =
-        {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) fallback_cases}
-      in
-      let (_, rhs') = List.fold_left (fun (guard, rhs') (name, view, inner) ->
-          let loc = inner.ppat_loc in
-          (None, pexp_match ~loc (eapply ~loc view [name]) [
-            {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
-            fallback_case ~loc
-          ])
-        ) (case.pc_guard, self#expression case.pc_rhs) acc
-      in
-      {pc_lhs = pat'; pc_guard = None; pc_rhs = rhs'}
-    )
+      )
+    in
+    let fallback_case ~loc =
+      {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) fallback_cases}
+    in
+    let (guard', rhs') = List.fold_left (fun (guard, rhs') (name, view, inner) ->
+        let loc = inner.ppat_loc in
+        (None, pexp_match ~loc (eapply ~loc view [name]) [
+          {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
+          fallback_case ~loc
+        ])
+      ) (case.pc_guard, self#expression case.pc_rhs) acc
+    in
+    {pc_lhs = pat'; pc_guard = guard'; pc_rhs = rhs'}
 
   method! cases cases =
     List.fold_right (fun case fallback_cases ->
