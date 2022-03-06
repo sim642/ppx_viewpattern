@@ -21,7 +21,7 @@ Supported in:
 * `function ...` cases,
 * `fun ... -> ...` arguments,
 * `let ... in ...` expression binding left-hand sides,
-* nested inside the `pat` part of a view pattern itself.
+* nested inside the `pat` and `exp` parts of a view pattern itself.
 
 Currently unsupported in:
 - [ ] `let ...` definition left-hand sides (at top level or in modules)
