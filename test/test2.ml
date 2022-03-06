@@ -78,3 +78,13 @@ let%test _ = f9 (1, 10) = (1, 10)
 let%test _ = f9 (10, 1) = (10, 1)
 let%test _ = f9 (10, 15) = (10, 15)
 let%test _ = f9 (15, 15) = (5, 5)
+
+let f10 = function
+  | [%view? Some [%view? Some i when g] when g] -> i
+  | i -> i
+
+let%test _ = f10 1 = 1
+let%test _ = f10 10 = 10
+let%test _ = f10 15 = 15
+let%test _ = f10 20 = 0
+let%test _ = f10 25 = 5

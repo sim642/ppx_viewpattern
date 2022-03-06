@@ -3,7 +3,7 @@ open Ast_builder.Default
 
 let cnt = ref 0
 
-let pat_fold_mapper = object
+let pat_fold_mapper = object (self)
   inherit [(string * expression * pattern) list] Ast_traverse.fold_map as super
 
   method! pattern pat acc =
@@ -12,7 +12,8 @@ let pat_fold_mapper = object
     | [%pat? [%view? [%p? inner] when [%e? view]]] ->
       let name = "foo" ^ string_of_int !cnt in
       incr cnt;
-      (pvar ~loc name, (name, view, inner) :: acc)
+      let (inner', accinner) = self#pattern inner [] in
+      (pvar ~loc name, accinner @ (name, view, inner') :: acc)
     | _ -> super#pattern pat acc
 end
 
