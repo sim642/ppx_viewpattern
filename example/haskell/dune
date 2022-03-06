@@ -1,5 +1,4 @@
 (library
- (name test2)
- (modules test2)
+ (name example_haskell)
  (inline_tests)
  (preprocess (pps ppx_viewpattern ppx_inline_test)))
