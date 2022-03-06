@@ -3,6 +3,8 @@
 Transformation for view patterns in OCaml.
 _Attempts to_ imitate [Haskell view patterns](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/view_patterns.html).
 
+See [`example/`](example/) for example usage.
+
 
 ## Usage
 In dune:
