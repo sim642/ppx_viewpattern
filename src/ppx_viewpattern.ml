@@ -20,7 +20,7 @@ end
 let impl_mapper: Ast_traverse.map = object (self)
   inherit Ast_traverse.map as super
 
-  method private do_case case rest =
+  method private case_with_fallback case fallback_cases =
     let (pat', acc) = pat_fold_mapper#pattern case.pc_lhs [] in
     if acc = [] then
       case
@@ -30,11 +30,14 @@ let impl_mapper: Ast_traverse.map = object (self)
         let loc = pat'.ppat_loc in
         ppat_alias ~loc pat' (Located.mk ~loc fallback_label)
       in
+      let fallback_case ~loc =
+        {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) fallback_cases}
+      in
       let (_, rhs') = List.fold_left (fun (guard, rhs') (name, view, inner) ->
           let loc = inner.ppat_loc in
           (None, pexp_match ~loc (eapply ~loc view [name]) [
             {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
-            {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) rest}
+            fallback_case ~loc
           ])
         ) (case.pc_guard, self#expression case.pc_rhs) acc
       in
@@ -42,8 +45,8 @@ let impl_mapper: Ast_traverse.map = object (self)
     )
 
   method! cases cases =
-    List.fold_right (fun case rest ->
-        self#do_case case rest :: rest
+    List.fold_right (fun case fallback_cases ->
+        self#case_with_fallback case fallback_cases :: fallback_cases
       ) cases []
 
   method! expression expr =
