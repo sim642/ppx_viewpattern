@@ -36,7 +36,7 @@ let impl_mapper: Ast_traverse.map = object (self)
     in
     let (guard', rhs') = List.fold_left (fun (guard, rhs') (name, view, inner) ->
         let loc = inner.ppat_loc in
-        (None, pexp_match ~loc (eapply ~loc view [name]) [
+        (None, pexp_match ~loc (eapply ~loc (self#expression view) [name]) [
           {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
           fallback_case ~loc
         ])
@@ -55,7 +55,7 @@ let impl_mapper: Ast_traverse.map = object (self)
       let (pat', acc) = pat_fold_mapper#pattern pat [] in
       let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
           let loc = inner.ppat_loc in
-          pexp_match ~loc (eapply ~loc view [name]) [
+          pexp_match ~loc (eapply ~loc (self#expression view) [name]) [
             {pc_lhs = inner; pc_guard = None; pc_rhs = rhs'}
           ]
         ) (self#expression expr) acc
@@ -69,7 +69,7 @@ let impl_mapper: Ast_traverse.map = object (self)
       in
       let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
           let loc = inner.ppat_loc in
-          pexp_match ~loc (eapply ~loc view [name]) [
+          pexp_match ~loc (eapply ~loc (self#expression view) [name]) [
             {pc_lhs = inner; pc_guard = None; pc_rhs = rhs'}
           ]
         ) (self#expression expr) acc

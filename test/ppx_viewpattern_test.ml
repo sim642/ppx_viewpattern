@@ -88,3 +88,11 @@ let%test _ = f10 10 = 10
 let%test _ = f10 15 = 15
 let%test _ = f10 20 = 0
 let%test _ = f10 25 = 5
+
+let f11 = function
+  | [%view? Some i when function [%view? Some i when g] -> Some i | _ -> None] -> i
+  | i -> i
+
+let%test _ = f11 1 = 1
+let%test _ = f11 10 = 0
+let%test _ = f11 15 = 5
