@@ -10,10 +10,10 @@ let pat_fold_mapper = object (self)
     let loc = pat.ppat_loc in
     match pat with
     | [%pat? [%view? [%p? inner] when [%e? view]]] ->
-      let name = "foo" ^ string_of_int !cnt in
+      let viewpattern_label = "__view_" ^ string_of_int !cnt in
       incr cnt;
       let (inner', accinner) = self#pattern inner [] in
-      (pvar ~loc name, accinner @ (name, view, inner') :: acc)
+      (pvar ~loc viewpattern_label, accinner @ (viewpattern_label, view, inner') :: acc)
     | _ -> super#pattern pat acc
 end
 
@@ -25,15 +25,16 @@ let impl_mapper: Ast_traverse.map = object (self)
     if acc = [] then
       case
     else (
+      let fallback_label = "__view_fallback" in
       let pat' =
         let loc = pat'.ppat_loc in
-        ppat_alias ~loc pat' (Located.mk ~loc "outer")
+        ppat_alias ~loc pat' (Located.mk ~loc fallback_label)
       in
       let (_, rhs') = List.fold_left (fun (guard, rhs') (name, view, inner) ->
           let loc = inner.ppat_loc in
           (None, pexp_match ~loc (eapply ~loc view [evar ~loc name]) [
             {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
-            {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc "outer") rest}
+            {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) rest}
           ])
         ) (case.pc_guard, self#expression case.pc_rhs) acc
       in
