@@ -60,12 +60,21 @@ let%test _ = f7 (1, 10) = (1, 10)
 let%test _ = f7 (10, 1) = (10, 1)
 let%test _ = f7 (10, 15) = (0, 5)
 
-(* TODO: guard *)
-(* let f8 = function
+let f8 = function
   | [%view? Some i when g] when i >= 5 -> i
   | i -> i
 
 let%test _ = f8 1 = 1
 let%test _ = f8 10 = 10
 let%test _ = f8 15 = 5
-let%test _ = f8 20 = 10 *)
+let%test _ = f8 20 = 10
+
+let f9 = function
+  | ([%view? Some i when g], [%view? Some j when g]) when i + j >= 10 -> (i, j)
+  | (i, j) -> (i, j)
+
+let%test _ = f9 (1, 2) = (1, 2)
+let%test _ = f9 (1, 10) = (1, 10)
+let%test _ = f9 (10, 1) = (10, 1)
+let%test _ = f9 (10, 15) = (10, 15)
+let%test _ = f9 (15, 15) = (5, 5)

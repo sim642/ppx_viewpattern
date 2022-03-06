@@ -54,7 +54,7 @@ type typ =
 
 exception Type_error
 
-let rec infer = function
+let[@warning "-redundant-case"] rec infer = function
   | Int _ -> TInt
   | Bool _ -> TBool
   | Add ([%view? TInt when infer], [%view? TInt when infer]) -> TInt
