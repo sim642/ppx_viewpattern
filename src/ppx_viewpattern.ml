@@ -36,28 +36,31 @@ class viewpattern_impl = object (self)
   val viewpattern_extractor = new viewpattern_extractor
 
   method private case_with_fallback case fallback_cases =
-    let (pat', acc) = viewpattern_extractor#pattern case.pc_lhs [] in
+    let (lhs', viewpatterns) = viewpattern_extractor#pattern case.pc_lhs [] in
     let fallback_label = "__view_fallback" in
-    let pat' =
-      if acc = [] then
-        pat' (* avoid unused alias *)
+    let lhs' =
+      if viewpatterns = [] then
+        lhs' (* avoid unused alias *)
       else (
-        let loc = pat'.ppat_loc in
-        ppat_alias ~loc pat' (Located.mk ~loc fallback_label)
+        let loc = lhs'.ppat_loc in
+        ppat_alias ~loc lhs' (Located.mk ~loc fallback_label)
       )
     in
     let fallback_case ~loc =
       {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) fallback_cases}
     in
-    let (guard', rhs') = List.fold_left (fun (guard, rhs') {var = name; view; pat = inner} ->
-        let loc = inner.ppat_loc in
-        (None, pexp_match ~loc (eapply ~loc (self#expression view) [name]) [
-          {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
-          fallback_case ~loc
-        ])
-      ) (self#option self#expression case.pc_guard, self#expression case.pc_rhs) acc
+    let (guard', rhs') = List.fold_left (fun (guard, rhs) {var; view; pat} ->
+        let loc = pat.ppat_loc in
+        let rhs' =
+          pexp_match ~loc (eapply ~loc (self#expression view) [var]) [
+            {pc_lhs = pat; pc_guard = guard; pc_rhs = rhs};
+            fallback_case ~loc
+          ]
+        in
+        (None, rhs')
+      ) (self#option self#expression case.pc_guard, self#expression case.pc_rhs) viewpatterns
     in
-    {pc_lhs = pat'; pc_guard = guard'; pc_rhs = rhs'}
+    {pc_lhs = lhs'; pc_guard = guard'; pc_rhs = rhs'}
 
   method! cases cases =
     List.fold_right (fun case fallback_cases ->
@@ -65,26 +68,29 @@ class viewpattern_impl = object (self)
       ) cases []
 
   method! expression_desc = function
-    | Pexp_fun (label, default, pat, expr) ->
-      let (pat', acc) = viewpattern_extractor#pattern pat [] in
-      let rhs' = List.fold_left (fun rhs' {var = name; view; pat = inner} ->
-          let loc = inner.ppat_loc in
-          [%expr let [%p inner] = [%e self#expression view] [%e name] in [%e rhs']]
-        ) (self#expression expr) acc
+    | Pexp_fun (arg_label, default, param, body) ->
+      let (param', viewpatterns) = viewpattern_extractor#pattern param [] in
+      let body' = List.fold_left (fun body {var; view; pat} ->
+          let loc = pat.ppat_loc in
+          [%expr let [%p pat] = [%e self#expression view] [%e var] in [%e body]]
+        ) (self#expression body) viewpatterns
       in
-      Pexp_fun (label, default, pat', rhs')
-    | Pexp_let (flag, bindings, expr) ->
-      let (acc, bindings') = List.fold_right (fun binding (acc, bindings') ->
-         let (pat', acc) = viewpattern_extractor#pattern binding.pvb_pat acc in
-         (acc, {binding with pvb_pat = pat'; pvb_expr = self#expression binding.pvb_expr} :: bindings')
+      Pexp_fun (arg_label, default, param', body')
+
+    | Pexp_let (rec_flag, bindings, expr) ->
+      let (bindings', viewpatterns) = List.fold_right (fun binding (bindings, viewpatterns) ->
+          let (pat', viewpatterns') = viewpattern_extractor#pattern binding.pvb_pat viewpatterns in
+          let binding' = {binding with pvb_pat = pat'; pvb_expr = self#expression binding.pvb_expr} in
+          (binding' :: bindings, viewpatterns')
         ) bindings ([], [])
       in
-      let rhs' = List.fold_left (fun rhs' {var = name; view; pat = inner} ->
-          let loc = inner.ppat_loc in
-          [%expr let [%p inner] = [%e self#expression view] [%e name] in [%e rhs']]
-        ) (self#expression expr) acc
+      let expr' = List.fold_left (fun expr {var; view; pat} ->
+          let loc = pat.ppat_loc in
+          [%expr let [%p pat] = [%e self#expression view] [%e var] in [%e expr]]
+        ) (self#expression expr) viewpatterns
       in
-      Pexp_let (flag, bindings', rhs')
+      Pexp_let (rec_flag, bindings', expr')
+
     | expr_desc -> super#expression_desc expr_desc
 end
 
