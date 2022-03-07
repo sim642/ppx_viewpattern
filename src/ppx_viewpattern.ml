@@ -1,11 +1,6 @@
 open Ppxlib
 open Ast_builder.Default
 
-(** [Option.map] before OCaml 4.08. *)
-let option_map f = function
-  | Some x -> Some (f x)
-  | None -> None
-
 let cnt = ref 0
 
 let pat_fold_mapper = object (self)
@@ -45,7 +40,7 @@ let impl_mapper: Ast_traverse.map = object (self)
           {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
           fallback_case ~loc
         ])
-      ) (option_map self#expression case.pc_guard, self#expression case.pc_rhs) acc
+      ) (self#option self#expression case.pc_guard, self#expression case.pc_rhs) acc
     in
     {pc_lhs = pat'; pc_guard = guard'; pc_rhs = rhs'}
 
