@@ -1,7 +1,6 @@
 open Ppxlib
 open Ast_builder.Default
 
-let cnt = ref 0
 
 type viewpattern = {
   var: expression;
@@ -9,15 +8,21 @@ type viewpattern = {
   pat: pattern;
 }
 
-let pat_fold_mapper = object (self)
+class viewpattern_extractor = object (self)
   inherit [viewpattern list] Ast_traverse.fold_map as super
+
+  val mutable fresh_label_count = 0
+
+  method private fresh_label =
+    let label = "__view_" ^ string_of_int fresh_label_count in
+    fresh_label_count <- fresh_label_count + 1;
+    label
 
   method! pattern pat acc =
     match pat with
     | [%pat? [%view? [%p? viewpattern_pat] when [%e? view]]] ->
       let loc = pat.ppat_loc in
-      let viewpattern_label = "__view_" ^ string_of_int !cnt in
-      incr cnt;
+      let viewpattern_label = self#fresh_label in
       let (viewpattern_pat', pat_acc) = self#pattern viewpattern_pat [] in
       let viewpattern = {var = evar ~loc viewpattern_label; view; pat = viewpattern_pat'} in
       let pat' = pvar ~loc viewpattern_label in
@@ -28,8 +33,10 @@ end
 let impl_mapper: Ast_traverse.map = object (self)
   inherit Ast_traverse.map as super
 
+  val viewpattern_extractor = new viewpattern_extractor
+
   method private case_with_fallback case fallback_cases =
-    let (pat', acc) = pat_fold_mapper#pattern case.pc_lhs [] in
+    let (pat', acc) = viewpattern_extractor#pattern case.pc_lhs [] in
     let fallback_label = "__view_fallback" in
     let pat' =
       if acc = [] then
@@ -59,7 +66,7 @@ let impl_mapper: Ast_traverse.map = object (self)
 
   method! expression_desc = function
     | Pexp_fun (label, default, pat, expr) ->
-      let (pat', acc) = pat_fold_mapper#pattern pat [] in
+      let (pat', acc) = viewpattern_extractor#pattern pat [] in
       let rhs' = List.fold_left (fun rhs' {var = name; view; pat = inner} ->
           let loc = inner.ppat_loc in
           [%expr let [%p inner] = [%e self#expression view] [%e name] in [%e rhs']]
@@ -68,7 +75,7 @@ let impl_mapper: Ast_traverse.map = object (self)
       Pexp_fun (label, default, pat', rhs')
     | Pexp_let (flag, bindings, expr) ->
       let (acc, bindings') = List.fold_right (fun binding (acc, bindings') ->
-         let (pat', acc) = pat_fold_mapper#pattern binding.pvb_pat acc in
+         let (pat', acc) = viewpattern_extractor#pattern binding.pvb_pat acc in
          (acc, {binding with pvb_pat = pat'; pvb_expr = self#expression binding.pvb_expr} :: bindings')
         ) bindings ([], [])
       in
