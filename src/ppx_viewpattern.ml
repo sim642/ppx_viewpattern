@@ -30,7 +30,7 @@ class viewpattern_extractor = object (self)
     | _ -> super#pattern pat acc
 end
 
-let impl_mapper: Ast_traverse.map = object (self)
+class viewpattern_impl = object (self)
   inherit Ast_traverse.map as super
 
   val viewpattern_extractor = new viewpattern_extractor
@@ -88,8 +88,7 @@ let impl_mapper: Ast_traverse.map = object (self)
     | expr_desc -> super#expression_desc expr_desc
 end
 
-let impl (str: structure): structure =
-  impl_mapper#structure str
+let impl = (new viewpattern_impl)#structure
 
 let () =
   Driver.register_transformation ~impl "viewpattern"
