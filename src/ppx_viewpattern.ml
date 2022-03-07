@@ -54,9 +54,7 @@ let impl_mapper: Ast_traverse.map = object (self)
       let (pat', acc) = pat_fold_mapper#pattern pat [] in
       let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
           let loc = inner.ppat_loc in
-          pexp_match ~loc (eapply ~loc (self#expression view) [name]) [
-            {pc_lhs = inner; pc_guard = None; pc_rhs = rhs'}
-          ]
+          [%expr let [%p inner] = [%e self#expression view] [%e name] in [%e rhs']]
         ) (self#expression expr) acc
       in
       Pexp_fun (label, default, pat', rhs')
@@ -68,9 +66,7 @@ let impl_mapper: Ast_traverse.map = object (self)
       in
       let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
           let loc = inner.ppat_loc in
-          pexp_match ~loc (eapply ~loc (self#expression view) [name]) [
-            {pc_lhs = inner; pc_guard = None; pc_rhs = rhs'}
-          ]
+          [%expr let [%p inner] = [%e self#expression view] [%e name] in [%e rhs']]
         ) (self#expression expr) acc
       in
       Pexp_let (flag, bindings', rhs')
