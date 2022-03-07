@@ -3,8 +3,14 @@ open Ast_builder.Default
 
 let cnt = ref 0
 
+type viewpattern = {
+  var: expression;
+  view: expression;
+  pat: pattern;
+}
+
 let pat_fold_mapper = object (self)
-  inherit [(expression * expression * pattern) list] Ast_traverse.fold_map as super
+  inherit [viewpattern list] Ast_traverse.fold_map as super
 
   method! pattern pat acc =
     let loc = pat.ppat_loc in
@@ -13,7 +19,7 @@ let pat_fold_mapper = object (self)
       let viewpattern_label = "__view_" ^ string_of_int !cnt in
       incr cnt;
       let (inner', accinner) = self#pattern inner [] in
-      (pvar ~loc viewpattern_label, accinner @ (evar ~loc viewpattern_label, view, inner') :: acc)
+      (pvar ~loc viewpattern_label, accinner @ {var = evar ~loc viewpattern_label; view; pat = inner'} :: acc)
     | _ -> super#pattern pat acc
 end
 
@@ -34,7 +40,7 @@ let impl_mapper: Ast_traverse.map = object (self)
     let fallback_case ~loc =
       {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) fallback_cases}
     in
-    let (guard', rhs') = List.fold_left (fun (guard, rhs') (name, view, inner) ->
+    let (guard', rhs') = List.fold_left (fun (guard, rhs') {var = name; view; pat = inner} ->
         let loc = inner.ppat_loc in
         (None, pexp_match ~loc (eapply ~loc (self#expression view) [name]) [
           {pc_lhs = inner; pc_guard = guard; pc_rhs = rhs'};
@@ -52,7 +58,7 @@ let impl_mapper: Ast_traverse.map = object (self)
   method! expression_desc = function
     | Pexp_fun (label, default, pat, expr) ->
       let (pat', acc) = pat_fold_mapper#pattern pat [] in
-      let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
+      let rhs' = List.fold_left (fun rhs' {var = name; view; pat = inner} ->
           let loc = inner.ppat_loc in
           [%expr let [%p inner] = [%e self#expression view] [%e name] in [%e rhs']]
         ) (self#expression expr) acc
@@ -64,7 +70,7 @@ let impl_mapper: Ast_traverse.map = object (self)
          (acc, {binding with pvb_pat = pat'; pvb_expr = self#expression binding.pvb_expr} :: bindings')
         ) bindings ([], [])
       in
-      let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
+      let rhs' = List.fold_left (fun rhs' {var = name; view; pat = inner} ->
           let loc = inner.ppat_loc in
           [%expr let [%p inner] = [%e self#expression view] [%e name] in [%e rhs']]
         ) (self#expression expr) acc
