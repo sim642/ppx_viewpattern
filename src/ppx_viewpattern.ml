@@ -13,13 +13,15 @@ let pat_fold_mapper = object (self)
   inherit [viewpattern list] Ast_traverse.fold_map as super
 
   method! pattern pat acc =
-    let loc = pat.ppat_loc in
     match pat with
-    | [%pat? [%view? [%p? inner] when [%e? view]]] ->
+    | [%pat? [%view? [%p? viewpattern_pat] when [%e? view]]] ->
+      let loc = pat.ppat_loc in
       let viewpattern_label = "__view_" ^ string_of_int !cnt in
       incr cnt;
-      let (inner', accinner) = self#pattern inner [] in
-      (pvar ~loc viewpattern_label, accinner @ {var = evar ~loc viewpattern_label; view; pat = inner'} :: acc)
+      let (viewpattern_pat', pat_acc) = self#pattern viewpattern_pat [] in
+      let viewpattern = {var = evar ~loc viewpattern_label; view; pat = viewpattern_pat'} in
+      let pat' = pvar ~loc viewpattern_label in
+      (pat', pat_acc @ viewpattern :: acc)
     | _ -> super#pattern pat acc
 end
 
