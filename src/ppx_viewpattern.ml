@@ -67,14 +67,16 @@ class viewpattern_impl = object (self)
         self#case_with_fallback case fallback_cases :: fallback_cases
       ) cases []
 
+  method private expression_viewpatterns expr viewpatterns =
+    List.fold_left (fun expr {var; view; pat} ->
+        let loc = pat.ppat_loc in
+        [%expr let [%p pat] = [%e self#expression view] [%e var] in [%e expr]]
+      ) (self#expression expr) viewpatterns
+
   method! expression_desc = function
     | Pexp_fun (arg_label, default, param, body) ->
       let (param', viewpatterns) = viewpattern_extractor#pattern param [] in
-      let body' = List.fold_left (fun body {var; view; pat} ->
-          let loc = pat.ppat_loc in
-          [%expr let [%p pat] = [%e self#expression view] [%e var] in [%e body]]
-        ) (self#expression body) viewpatterns
-      in
+      let body' = self#expression_viewpatterns body viewpatterns in
       Pexp_fun (arg_label, default, param', body')
 
     | Pexp_let (rec_flag, bindings, expr) ->
@@ -84,11 +86,7 @@ class viewpattern_impl = object (self)
           (binding' :: bindings, viewpatterns')
         ) bindings ([], [])
       in
-      let expr' = List.fold_left (fun expr {var; view; pat} ->
-          let loc = pat.ppat_loc in
-          [%expr let [%p pat] = [%e self#expression view] [%e var] in [%e expr]]
-        ) (self#expression expr) viewpatterns
-      in
+      let expr' = self#expression_viewpatterns expr viewpatterns in
       Pexp_let (rec_flag, bindings', expr')
 
     | expr_desc -> super#expression_desc expr_desc
