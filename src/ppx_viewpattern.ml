@@ -54,8 +54,7 @@ let impl_mapper: Ast_traverse.map = object (self)
         self#case_with_fallback case fallback_cases :: fallback_cases
       ) cases []
 
-  method! expression expr =
-    match expr.pexp_desc with
+  method! expression_desc = function
     | Pexp_fun (label, default, pat, expr) ->
       let (pat', acc) = pat_fold_mapper#pattern pat [] in
       let rhs' = List.fold_left (fun rhs' (name, view, inner) ->
@@ -65,7 +64,7 @@ let impl_mapper: Ast_traverse.map = object (self)
           ]
         ) (self#expression expr) acc
       in
-      {expr with pexp_desc = Pexp_fun (label, default, pat', rhs')}
+      Pexp_fun (label, default, pat', rhs')
     | Pexp_let (flag, bindings, expr) ->
       let (acc, bindings') = List.fold_right (fun binding (acc, bindings') ->
          let (pat', acc) = pat_fold_mapper#pattern binding.pvb_pat acc in
@@ -79,8 +78,8 @@ let impl_mapper: Ast_traverse.map = object (self)
           ]
         ) (self#expression expr) acc
       in
-      {expr with pexp_desc = Pexp_let (flag, bindings', rhs')}
-    | _ -> super#expression expr
+      Pexp_let (flag, bindings', rhs')
+    | expr_desc -> super#expression_desc expr_desc
 end
 
 let impl (str: structure): structure =
