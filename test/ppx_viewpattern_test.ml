@@ -1,6 +1,3 @@
-[@@@warning "-redundant-case"]
-[@@@warning "-partial-match"]
-
 let g = function
   | i when i >= 10 -> Some (i - 10)
   | _ -> None

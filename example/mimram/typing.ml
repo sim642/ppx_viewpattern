@@ -17,7 +17,7 @@ type prog =
   | Snd of prog
   | Unit
 
-let[@warning "-redundant-case"] rec reduce = function
+let rec reduce = function
   | Add (Int n1, Int n2) -> Some (Int (n1 + n2))
   | Add ([%view? Some p1' when reduce], p2) -> Some (Add (p1', p2))
   | Add (p1, [%view? Some p2' when reduce]) -> Some (Add (p1, p2'))
@@ -54,7 +54,7 @@ type typ =
 
 exception Type_error
 
-let[@warning "-redundant-case"] rec infer = function
+let rec infer = function
   | Int _ -> TInt
   | Bool _ -> TBool
   | Add ([%view? TInt when infer], [%view? TInt when infer]) -> TInt

@@ -30,6 +30,13 @@ class viewpattern_extractor = object (self)
     | _ -> super#pattern pat acc
 end
 
+let attr_warning ~loc str =
+  let structure = {pstr_desc = Pstr_eval (estring ~loc str, []); pstr_loc = loc} in
+  { attr_name = { txt = "ocaml.warning"; loc; };
+    attr_payload = PStr [structure];
+    attr_loc = loc;
+  }
+
 class viewpattern_impl = object (self)
   inherit Ast_traverse.map as super
 
@@ -60,12 +67,18 @@ class viewpattern_impl = object (self)
         (None, rhs')
       ) (self#option self#expression case.pc_guard, self#expression case.pc_rhs) viewpatterns
     in
-    {pc_lhs = lhs'; pc_guard = guard'; pc_rhs = rhs'}
+    ({pc_lhs = lhs'; pc_guard = guard'; pc_rhs = rhs'}, viewpatterns <> [])
 
-  method! cases cases =
-    List.fold_right (fun case fallback_cases ->
-        self#case_with_fallback case fallback_cases :: fallback_cases
-      ) cases []
+  method private cases_contains_view cases =
+    List.fold_right (fun case (fallback_cases, contains_view) ->
+        let (case', case_contains_view) = self#case_with_fallback case fallback_cases in
+        (case' :: fallback_cases, contains_view || case_contains_view)
+      ) cases ([], false)
+
+  method private cases_attributes cases loc =
+    match self#cases_contains_view cases with
+    | (cases', true) -> (cases', [attr_warning ~loc "-redundant-case"; attr_warning ~loc "-partial-match"])
+    | (cases', false) -> (cases', [])
 
   method private expression_viewpatterns expr viewpatterns =
     List.fold_left (fun expr {var; view; pat} ->
@@ -73,11 +86,24 @@ class viewpattern_impl = object (self)
         [%expr let [%p pat] = [%e self#expression view] [%e var] in [%e expr]]
       ) (self#expression expr) viewpatterns
 
-  method! expression_desc = function
+  method! expression ({ pexp_desc; pexp_loc; pexp_loc_stack; pexp_attributes } as expr) =
+    let pexp_loc = self#location pexp_loc in
+    let pexp_loc_stack = self#location_stack pexp_loc_stack in
+    let pexp_attributes = self#attributes pexp_attributes in
+    match pexp_desc with
+    | Pexp_match (expr, cases) ->
+      let expr' = self#expression expr in
+      let (cases', attributes) = self#cases_attributes cases pexp_loc in
+      {pexp_desc = Pexp_match (expr', cases'); pexp_loc; pexp_loc_stack; pexp_attributes = attributes @ pexp_attributes}
+
+    | Pexp_function cases ->
+      let (cases', attributes) = self#cases_attributes cases pexp_loc in
+      {pexp_desc = Pexp_function cases'; pexp_loc; pexp_loc_stack; pexp_attributes = attributes @ pexp_attributes}
+
     | Pexp_fun (arg_label, default, param, body) ->
       let (param', viewpatterns) = viewpattern_extractor#pattern param [] in
       let body' = self#expression_viewpatterns body viewpatterns in
-      Pexp_fun (arg_label, default, param', body')
+      {pexp_desc = Pexp_fun (arg_label, default, param', body'); pexp_loc; pexp_loc_stack; pexp_attributes}
 
     | Pexp_let (rec_flag, bindings, expr) ->
       let (bindings', viewpatterns) = List.fold_right (fun binding (bindings, viewpatterns) ->
@@ -87,9 +113,9 @@ class viewpattern_impl = object (self)
         ) bindings ([], [])
       in
       let expr' = self#expression_viewpatterns expr viewpatterns in
-      Pexp_let (rec_flag, bindings', expr')
+      {pexp_desc = Pexp_let (rec_flag, bindings', expr'); pexp_loc; pexp_loc_stack; pexp_attributes}
 
-    | expr_desc -> super#expression_desc expr_desc
+    | _ -> super#expression expr
 end
 
 let impl = (new viewpattern_impl)#structure

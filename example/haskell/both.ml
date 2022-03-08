@@ -2,10 +2,10 @@
 
 let both x = (x, x)
 
-[@@@warning "-partial-match"]
-
 let f = function
   | [%view? (xs, h :: t) when both] -> h :: xs @ t
+
+[@@@warning "-partial-match"]
 
 let f2 = fun [%view? (xs, h :: t) when both] -> h :: xs @ t
 

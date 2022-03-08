@@ -9,9 +9,6 @@ type 'a jlistview =
   | Nil
   | Cons of 'a * 'a jlist
 
-[@@@warning "-redundant-case"]
-[@@@warning "-partial-match"]
-
 let rec view: 'a jlist -> 'a jlistview = function
   | Empty -> Nil
   | Single a -> Cons (a, Empty)
