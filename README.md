@@ -26,4 +26,5 @@ Supported in:
 _A view pattern disables `redundant-case` and `partial-match` warnings for the corresponding `match`/`function`._
 
 Currently unsupported in:
-- [ ] `let ...` definition left-hand sides (at top level or in modules)
+- [ ] `try ... with ...` cases,
+- [ ] `let ...` definition left-hand sides (at top level or in modules).
