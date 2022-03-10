@@ -1,5 +1,7 @@
 # ppx_viewpattern
 
+[![ci workflow status](https://github.com/sim642/ppx_viewpattern/actions/workflows/ci.yml/badge.svg)](https://github.com/sim642/ppx_viewpattern/actions/workflows/ci.yml)
+
 Transformation for view patterns in OCaml.
 _Attempts to_ imitate [Haskell view patterns](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/view_patterns.html).
 
