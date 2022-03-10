@@ -69,14 +69,15 @@ class viewpattern_impl = object (self)
     in
     ({pc_lhs = lhs'; pc_guard = guard'; pc_rhs = rhs'}, viewpatterns <> [])
 
-  method private cases_contains_view cases =
-    List.fold_right (fun case (fallback_cases, contains_view) ->
-        let (case', case_contains_view) = self#case_with_fallback case fallback_cases in
-        (case' :: fallback_cases, contains_view || case_contains_view)
-      ) cases ([], false)
+  method private cases_contains_view ~inner_fallback_cases cases =
+    List.fold_right (fun case (outer_fallback_cases, inner_fallback_cases, contains_view) ->
+        let (case', case_contains_view) = self#case_with_fallback case inner_fallback_cases in
+        (case' :: outer_fallback_cases, case' :: inner_fallback_cases, contains_view || case_contains_view)
+      ) cases ([], inner_fallback_cases, false)
+    |> fun (cases', _, contains_view) -> (cases', contains_view)
 
-  method private cases_attributes cases loc =
-    match self#cases_contains_view cases with
+  method private cases_attributes ?(inner_fallback_cases=[]) cases loc =
+    match self#cases_contains_view ~inner_fallback_cases cases with
     | (cases', true) -> (cases', [attr_warning ~loc "-redundant-case"; attr_warning ~loc "-partial-match"])
     | (cases', false) -> (cases', [])
 
@@ -99,6 +100,15 @@ class viewpattern_impl = object (self)
     | Pexp_function cases ->
       let (cases', attributes) = self#cases_attributes cases pexp_loc in
       {pexp_desc = Pexp_function cases'; pexp_loc; pexp_loc_stack; pexp_attributes = attributes @ pexp_attributes}
+
+    | Pexp_try (expr, cases) ->
+      let expr' = self#expression expr in
+      let inner_fallback_cases =
+        let loc = pexp_loc in
+        [{pc_lhs = [%pat? e]; pc_guard = None; pc_rhs = [%expr raise e]}]
+      in
+      let (cases', _) = self#cases_attributes ~inner_fallback_cases cases pexp_loc in
+      {pexp_desc = Pexp_try (expr', cases'); pexp_loc; pexp_loc_stack; pexp_attributes} (* TODO: attributes also somewhere here? *)
 
     | Pexp_fun (arg_label, default, param, body) ->
       let (param', viewpatterns) = viewpattern_extractor#pattern param [] in

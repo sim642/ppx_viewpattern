@@ -17,3 +17,10 @@ let f_param [%view? (xs, h :: t) when both] = h :: xs @ t
 let f_let_in l =
   let [%view? (xs, h :: t) when both] = l in
   h :: xs @ t
+
+let f_try (type a) (l: a list) =
+  let exception Return of a list in
+  try
+    raise (Return l)
+  with Return [%view? (xs, h :: t) when both] ->
+    h :: xs @ t

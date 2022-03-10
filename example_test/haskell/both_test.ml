@@ -35,10 +35,19 @@ let test_f_let_in =
       )
   )
 
+let test_f_try =
+  QCheck_ounit.to_ounit2_test (
+    QCheck.Test.make ~name:"f_f_try" QCheck.(list int) (fun l ->
+        QCheck.assume (l <> []);
+        Both.f_try l = f_reference l
+      )
+  )
+
 let tests =
   "iterator_style" >::: [
     test_f_function;
     test_f_fun;
     test_f_param;
     test_f_let_in;
+    test_f_try;
   ]

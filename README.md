@@ -21,10 +21,10 @@ Supported in:
 * `function ...` cases,
 * `fun ... -> ...` arguments,
 * `let ... in ...` expression binding left-hand sides,
+* `try ... with ...` cases,
 * nested inside the `pat` and `exp` parts of a view pattern itself.
 
 _A view pattern disables `redundant-case` and `partial-match` warnings for the corresponding `match`/`function`._
 
 Currently unsupported in:
-- [ ] `try ... with ...` cases,
 - [ ] `let ...` definition left-hand sides (at top level or in modules).
