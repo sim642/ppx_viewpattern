@@ -12,4 +12,5 @@
  (description "Transformation for view patterns in OCaml. Attempts to imitate Haskell view patterns.")
  (depends
   (ppxlib (>= 0.17.0))
-  (ppx_inline_test :with-test)))
+  (ounit2 :with-test)
+  (qcheck-ounit :with-test)))

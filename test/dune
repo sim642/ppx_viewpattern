@@ -1,4 +1,4 @@
-(library
+(test
  (name ppx_viewpattern_test)
- (inline_tests)
- (preprocess (pps ppx_viewpattern ppx_inline_test)))
+ (libraries ounit2)
+ (preprocess (pps ppx_viewpattern)))

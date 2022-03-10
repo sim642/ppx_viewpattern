@@ -1,4 +1,3 @@
 (library
  (name example_mimram)
- (inline_tests)
- (preprocess (pps ppx_viewpattern ppx_inline_test)))
+ (preprocess (pps ppx_viewpattern)))
