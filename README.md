@@ -6,6 +6,11 @@ Transformation for view patterns in OCaml.
 _Attempts to_ imitate [Haskell view patterns](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/view_patterns.html).
 
 
+## Installation
+```console
+opam install ppx_viewpattern
+```
+
 ## Usage
 In dune:
 ```
