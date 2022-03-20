@@ -106,3 +106,22 @@ let test_f11 _ =
   assert_equal 1 (f11 1);
   assert_equal 0 (f11 10);
   assert_equal 5 (f11 15)
+
+
+let tests =
+  "ppx_viewpattern" >::: [
+    "f1" >:: test_f1;
+    "f2" >:: test_f2;
+    "f3" >:: test_f3;
+    "f4" >:: test_f4;
+    "f5" >:: test_f5;
+    "f6" >:: test_f6;
+    "f7" >:: test_f7;
+    "f8" >:: test_f8;
+    "f9" >:: test_f9;
+    "f10" >:: test_f10;
+    "f11" >:: test_f11;
+  ]
+
+let () =
+  run_test_tt_main tests
