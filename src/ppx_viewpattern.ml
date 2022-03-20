@@ -54,7 +54,7 @@ class viewpattern_impl = object (self)
       )
     in
     let fallback_case ~loc =
-      {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) fallback_cases}
+      {pc_lhs = ppat_any ~loc; pc_guard = None; pc_rhs = pexp_match ~loc (evar ~loc fallback_label) fallback_cases} (* fine if fallback_cases contains exception patterns, won't be used for __view_fallback variable anyway *)
     in
     let (guard', rhs') = List.fold_left (fun (guard, rhs) {var; view; pat} ->
         let loc = pat.ppat_loc in
