@@ -136,6 +136,17 @@ let test_f13 _ =
   assert_equal 0 (f13 10);
   assert_equal 5 (f13 15)
 
+let f14 = function
+  | [%view? exception Not_found when g2] -> -10
+  | [%view? Some i when g2] -> i
+  | i -> i
+
+let test_f14 _ =
+  assert_equal (-10) (f14 1);
+  assert_equal 5 (f14 5);
+  assert_equal 0 (f14 10);
+  assert_equal 5 (f14 15)
+
 let tests =
   "ppx_viewpattern" >::: [
     "f1" >:: test_f1;
@@ -151,6 +162,7 @@ let tests =
     "f11" >:: test_f11;
     "f12" >:: test_f12;
     "f13" >:: test_f13;
+    "f14" >:: test_f14;
   ]
 
 let () =
