@@ -97,10 +97,6 @@ class viewpattern_impl = object (self)
       let (cases', attributes) = self#cases_attributes cases pexp_loc in
       {pexp_desc = Pexp_match (expr', cases'); pexp_loc; pexp_loc_stack; pexp_attributes = attributes @ pexp_attributes}
 
-    | Pexp_function cases ->
-      let (cases', attributes) = self#cases_attributes cases pexp_loc in
-      {pexp_desc = Pexp_function cases'; pexp_loc; pexp_loc_stack; pexp_attributes = attributes @ pexp_attributes}
-
     | Pexp_try (expr, cases) ->
       let expr' = self#expression expr in
       let inner_fallback_cases =
@@ -110,11 +106,26 @@ class viewpattern_impl = object (self)
       let (cases', _) = self#cases_attributes ~inner_fallback_cases cases pexp_loc in
       {pexp_desc = Pexp_try (expr', cases'); pexp_loc; pexp_loc_stack; pexp_attributes} (* TODO: attributes also somewhere here? *)
 
-    | Pexp_fun (arg_label, default, param, body) ->
-      let (param', viewpatterns) = viewpattern_extractor#pattern param [] in
-      let body' = self#expression_viewpatterns body viewpatterns in
-      {pexp_desc = Pexp_fun (arg_label, default, param', body'); pexp_loc; pexp_loc_stack; pexp_attributes}
-
+    | Pexp_function (params, constraint_, body) -> (
+      let (params', viewpatterns) =
+        List.fold_left (fun (params, patts) param -> match param with
+          | { pparam_desc = Pparam_val (lbl, e, pat); _ } ->
+            let pat', viewpatterns = viewpattern_extractor#pattern pat patts in
+            { param with pparam_desc = Pparam_val (lbl, e, pat') } :: params, patts @ viewpatterns
+          | v -> (v :: params, patts)
+        ) ([], []) params
+      in
+      let params' = List.rev params' in
+      match body with
+        | Pfunction_body e ->
+          let body' = self#expression_viewpatterns e viewpatterns in
+          { pexp_desc = Pexp_function (params', constraint_, Pfunction_body body');
+            pexp_loc; pexp_loc_stack; pexp_attributes }
+        | Pfunction_cases (cases, locs, attrs) ->
+          let (cases', attributes) = self#cases_attributes cases pexp_loc in
+          {pexp_desc = Pexp_function (params', constraint_, Pfunction_cases (cases', locs, attrs));
+           pexp_loc; pexp_loc_stack; pexp_attributes = attributes @ pexp_attributes }
+    )
     | Pexp_let (rec_flag, bindings, expr) ->
       let (bindings', viewpatterns) = List.fold_right (fun binding (bindings, viewpatterns) ->
           let (pat', viewpatterns') = viewpattern_extractor#pattern binding.pvb_pat viewpatterns in
