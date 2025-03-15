@@ -85,7 +85,7 @@ jobs:
       - name: Downgrade dependencies
         # must specify ocaml-base-compiler again to prevent it from being downgraded
         # run: opam install $(opam exec -- opam-0install --prefer-oldest ppx_viewpattern ocaml-base-compiler.${{ matrix.ocaml-compiler }})
-        run: opam install --unlock-base $(opam exec -- opam-0install --prefer-oldest --with-test ppx_viewpattern)
+        run: opam install --update-invariant $(opam exec -- opam-0install --prefer-oldest --with-test ppx_viewpattern)
 
       - name: Build
         run: opam exec -- dune build
