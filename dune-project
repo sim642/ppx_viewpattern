@@ -13,4 +13,4 @@
  (depends
   (ppxlib (>= 0.36.0))
   (ounit2 :with-test)
-  (qcheck-ounit :with-test)))
+  (qcheck-ounit (and (>= 0.90) :with-test))))

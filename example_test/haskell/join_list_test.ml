@@ -12,7 +12,7 @@ let arbitrary_jlist (x: 'a QCheck.arbitrary): 'a Join_list.jlist QCheck.arbitrar
       | 0 -> return empty
       | 1 -> map single x.gen
       | n ->
-        frequency [
+        oneof_weighted [
           1, map single x.gen;
           2, map2 jlist_join (self (n / 2)) (self (n / 2));
         ]
